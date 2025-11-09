@@ -47,15 +47,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        safe: "hsl(var(--safe-green))",
+        scrap: "hsl(var(--scrap-red))",
+        unstable: "hsl(var(--unstable-amber))",
+        lime: "hsl(var(--lime-accent))",
+        tile: {
+          DEFAULT: "hsl(var(--tile-bg))",
+          border: "hsl(var(--tile-border))",
         },
       },
       borderRadius: {
@@ -84,6 +82,8 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "tile-reveal": "tile-reveal 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
       },
     },
   },
