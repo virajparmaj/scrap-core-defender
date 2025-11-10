@@ -1,11 +1,12 @@
+// lib/api.ts
+
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export interface GameConfig {
-  rows: number;
-  cols?: number; // ✅ now optional, always overridden
+  rows: number;             // size (N×N)
+  cols?: number;            // optional; always set to rows
   powder: "Virgin" | "Recycled";
   ta: boolean;
-  backendBoard?: number[][]; // ✅ optional board from backend
 }
 
 export interface BoardResponse {
@@ -13,36 +14,40 @@ export interface BoardResponse {
   cols: number;
   board: number[][];
 
-  /** ✅ Preferred: core mask matrix */
-  core?: number[][];
-
-  /** ⚠️ Legacy fallback (ignored if core mask exists) */
-  bounds?: { r0: number; r1: number; c0: number; c1: number };
+  /**
+   * ✅ Core mask (1 = core tile, 0 = non-core).
+   * Always provided by backend.
+   */
+  core: number[][];
 }
 
 export async function fetchPredict(config: GameConfig): Promise<BoardResponse> {
-  const size = config.rows; // ✅ enforce square grid
-
+  const size = config.rows; // enforce square
   const url = `${BASE}/predict?rows=${size}&cols=${size}&powder=${config.powder}&ta=${config.ta ? 1 : 0}`;
 
-  const res = await fetch(url);
+  const res = await fetch(url, { method: "GET" });
 
   if (!res.ok) {
-    throw new Error(`API error: ${res.statusText} (${res.status})`);
+    throw new Error(`API Error: ${res.status} ${res.statusText}`);
   }
 
   const data = await res.json();
 
-  // ✅ Ensure backend response always has a core zone
+  /**
+   * ✅ Ensure core mask always exists
+   * (backend now returns a boolean mask but we convert to number[][] for consistency)
+   */
   if (!data.core) {
-    const mid = Math.floor(size / 2);
-    data.core = {
-      r0: mid - 1,
-      r1: mid + 2,
-      c0: mid - 1,
-      c1: mid + 2,
-    };
+    throw new Error("Backend did not provide core mask. Update backend /predict to include core.");
   }
 
-  return data;
+  // normalize core to number[][]
+  data.core = data.core.map((row: any[]) => row.map((v: any) => (v ? 1 : 0)));
+
+  return {
+    rows: size,
+    cols: size,
+    board: data.board,
+    core: data.core,
+  };
 }
