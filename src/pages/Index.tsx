@@ -70,7 +70,7 @@ const Index = () => {
                 Build Plate Survivor
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                ML-Powered detection. Click safe tiles - avoid scrap - master the core.
+                Click Safe - Avoid Scrap - Master Core.
               </p>
             </div>
             <Settings onStart={handleStart} />
