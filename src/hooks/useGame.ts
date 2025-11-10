@@ -9,11 +9,11 @@ export interface TileState {
   isScrap: boolean;
 }
 
-/** ✅ Check if core is fully revealed using coreMask */
-function isCoreFullyRevealed(tiles: TileState[][], coreMask: number[][]) {
+/** ✅ Check if ALL core cells are revealed */
+function isCoreFullyRevealed(tiles: TileState[][], coreMask: boolean[][]) {
   for (let r = 0; r < tiles.length; r++) {
     for (let c = 0; c < tiles[0].length; c++) {
-      if (coreMask[r][c] === 1 && !tiles[r][c].revealed) return false;
+      if (coreMask[r][c] && !tiles[r][c].revealed) return false;
     }
   }
   return true;
@@ -30,11 +30,9 @@ export function useGame() {
 
   const [board, setBoard] = useState<number[][]>([]);
   const [tiles, setTiles] = useState<TileState[][]>([]);
-  const [coreMask, setCoreMask] = useState<number[][]>([]);
+  const [coreMask, setCoreMask] = useState<boolean[][]>([]);   // ✅ boolean now
 
-  /** ✅ turn order: core → noncore → core → … → free (after core cleared) */
   const [turnMode, setTurnMode] = useState<"core" | "noncore" | "free">("core");
-
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +42,6 @@ export function useGame() {
     setGameState("loading");
     setError(null);
 
-    // force square board
     const size = newConfig.rows;
     const fixedConfig = { ...newConfig, rows: size, cols: size };
     setConfig(fixedConfig);
@@ -52,14 +49,17 @@ export function useGame() {
     setScore(0);
     setTurnMode("core");
 
-    const savedHighScore = getHighScore(fixedConfig);
-    setHighScore(savedHighScore);
+    setHighScore(getHighScore(fixedConfig));
 
     try {
       const response: BoardResponse = await fetchPredict(fixedConfig);
 
       setBoard(response.board);
-      setCoreMask(response.core); // ✅ backend core mask
+
+      // ✅ Convert core mask → boolean[][]
+      setCoreMask(
+        response.core.map(row => row.map(v => v === 1))
+      );
 
       const initialTiles = response.board.map(row =>
         row.map(cell => ({
@@ -71,19 +71,19 @@ export function useGame() {
       setTiles(initialTiles);
       setGameState("playing");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start game");
+      setError(err instanceof Error ? err.message : "Failed to start game.");
       setGameState("idle");
     }
   }, []);
 
-  /** ✅ Reveal Tile Logic */
+  /** ✅ Reveal Logic */
   const revealTile = useCallback(
     (row: number, col: number) => {
       if (gameState !== "playing") return;
 
-      const inCore = coreMask[row]?.[col] === 1;
+      const inCore = coreMask[row]?.[col];
 
-      // enforce turn rules unless free phase
+      // turn-based logic (until core is fully revealed)
       if (turnMode === "core" && !inCore) return;
       if (turnMode === "noncore" && inCore) return;
 
@@ -93,9 +93,7 @@ export function useGame() {
         const newTiles = prev.map(r => [...r]);
         newTiles[row][col] = { ...newTiles[row][col], revealed: true };
 
-        const isScrap = newTiles[row][col].isScrap;
-
-        if (isScrap) {
+        if (newTiles[row][col].isScrap) {
           setGameState("gameover");
           const finalScore = score;
           saveHighScore(config, finalScore);
@@ -103,13 +101,11 @@ export function useGame() {
           return newTiles;
         }
 
-        setScore(prev => prev + 1);
+        setScore(s => s + 1);
 
-        // ✅ Core complete → unlock full free-click
         if (isCoreFullyRevealed(newTiles, coreMask)) {
-          setTurnMode("free");
+          setTurnMode("free"); // ✅ unlock full play mode
         } else {
-          // alternate core/noncore turns
           setTurnMode(prev => (prev === "core" ? "noncore" : "core"));
         }
 

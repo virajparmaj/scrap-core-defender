@@ -6,7 +6,7 @@ interface GridProps {
   rows: number;
   cols: number;
   tiles: TileState[][];
-  coreMask: number[][]; // ✅ backend core mask
+  coreMask: boolean[][];        // ✅ new
   turnMode: "core" | "noncore" | "free";
   onTileClick: (row: number, col: number) => void;
 }
@@ -21,7 +21,7 @@ export function Grid({ rows, cols, tiles, coreMask, turnMode, onTileClick }: Gri
   }
 
   // ✅ Core membership now comes from backend mask
-  const inCore = (r: number, c: number) => coreMask[r][c] === 1;
+const inCore = (r: number, c: number) => coreMask[r][c];
 
   const canClick = (r: number, c: number) => {
     if (tiles[r][c].revealed) return false;
