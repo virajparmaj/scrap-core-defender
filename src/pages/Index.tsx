@@ -63,7 +63,7 @@ const Index = () => {
                 Build Plate Survivor
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Click Safe — Avoid Scrap — Master The Core.
+                Click Safe — Avoid Scrap — Master Core.
               </p>
             </div>
             <Settings onStart={handleStart} />
