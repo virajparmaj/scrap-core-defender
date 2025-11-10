@@ -30,7 +30,7 @@ export function Modal({ open, onOpenChange, type }: ModalProps) {
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   <li>Select grid size (3×3 to 11×11)</li>
                   <li>Choose powder type: Virgin or Recycled</li>
-                  <li>Toggle Thermal Anneal (TA) on/off</li>
+                  <li>Toggle TEST ARTIFACTS (TA) on/off</li>
                 </ul>
               </section>
 

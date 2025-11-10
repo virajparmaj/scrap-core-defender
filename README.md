@@ -5,7 +5,7 @@ A cyberpunk-themed Minesweeper-style training game powered by machine learning. 
 ## 🎮 Features
 
 - **ML-Powered Board Generation**: Uses a pre-trained scikit-learn model to generate realistic scrap probability maps
-- **Dynamic Difficulty**: Configure grid size (3×3 to 11×11), powder type, and thermal anneal settings
+- **Dynamic Difficulty**: Configure grid size (3×3 to 11×11), powder type, and TEST ARTIFACTS settings
 - **Core Mechanics**:
   - **Core Combo System**: Start in the safe center zone to activate score multipliers
   - **Overheat Timer**: Rotating unstable zones add temporal challenge
@@ -90,7 +90,7 @@ backend/
 
 ## 🎯 Game Rules
 
-1. **Setup**: Select grid size, powder type (Virgin/Recycled), and toggle Thermal Anneal
+1. **Setup**: Select grid size, powder type (Virgin/Recycled), and toggle TEST ARTIFACTS
 2. **Objective**: Reveal safe tiles without hitting scrap
 3. **Tiles**:
    - 🟢 **Green** = Safe (+1 point, or +2 with multiplier)

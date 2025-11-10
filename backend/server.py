@@ -42,21 +42,43 @@ def _logit(p):
     return np.log(p/(1-p))
 
 def core_window(rows:int, cols:int):
-    """Define a stable core that we never boost or force-scrap."""
-    if rows >= 7 and cols >= 7:
-        k = 3
-    elif rows >= 5 and cols >= 5:
-        k = 2
-    else:
-        k = 1
-    r0 = rows//2 - (k//2)
-    c0 = cols//2 - (k//2)
-    r1, c1 = r0 + k, c0 + k
-    r0, c0 = max(r0,0), max(c0,0)
-    r1, c1 = min(r1, rows), min(c1, cols)
+    """
+    Compute centered core region.
+    Core size = floor(min(rows, cols) / 2)
+    (ensures correct behavior for both even and odd plate sizes.)
+    """
+    k = max(1, min(rows, cols) // 2)
+
+    r0 = (rows - k) // 2
+    c0 = (cols - k) // 2
+    r1 = r0 + k
+    c1 = c0 + k
+
     mask = np.zeros((rows, cols), dtype=bool)
     mask[r0:r1, c0:c1] = True
     return mask
+
+def random_spatial_transform(P):
+    """
+    Apply a random flip/rotation to break deterministic scrap placement,
+    while preserving relative spatial probability structure.
+    """
+    rng = np.random.default_rng()
+    choice = rng.integers(0, 6)
+
+    if choice == 0:
+        return P
+    elif choice == 1:
+        return np.rot90(P, 1)
+    elif choice == 2:
+        return np.rot90(P, 2)
+    elif choice == 3:
+        return np.rot90(P, 3)
+    elif choice == 4:
+        return np.flipud(P)
+    elif choice == 5:
+        return np.fliplr(P)
+
 
 def sample_with_weighted_target(P, base_target=0.33, temperature=1.8, min_scraps=None):
     """
@@ -82,10 +104,24 @@ def sample_with_weighted_target(P, base_target=0.33, temperature=1.8, min_scraps
     # Core remains as original probabilities
     Pt[core] = P[core]
 
-    # Compute target on non-core only, guided by model mean
+    # Compute target scrap rate on NON-CORE region (1/4 = ~0.25 baseline)
     mean_p_nc = float(P[noncore].mean())
-    target_nc = max(base_target, mean_p_nc * 2.0)          # amplify but keep realism
-    target_nc = float(np.clip(target_nc, 0.05, 0.9))        # sane bounds
+
+    if rows * cols <= 16:
+        # Small boards → lower rate to keep the game playable
+        target_nc = 0.15
+    elif rows * cols <= 36:
+        # Medium boards → your desired 1/4th scrap
+        target_nc = 0.25
+    else:
+        # Large boards → slightly more scrap to increase difficulty
+        target_nc = 0.30
+
+    # Blend with model probability (keeps realism)
+    target_nc = 0.6 * target_nc + 0.4 * mean_p_nc
+
+    # Ensure stable boundaries
+    target_nc = float(np.clip(target_nc, 0.10, 0.45))
 
     # Logit shift to hit target on non-core only
     L = _logit(Pt)
@@ -142,6 +178,7 @@ def predict(
 ):
     try:
         P = predict_scrap_map(rows, cols, powder, bool(ta))
+        P = random_spatial_transform(P)   # NEW: introduce pattern variability
     except FileNotFoundError as e:
         raise HTTPException(status_code=500, detail=f"Model missing: {e}")
     except Exception as e:

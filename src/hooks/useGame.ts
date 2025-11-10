@@ -30,36 +30,44 @@ export function useGame() {
   const startGame = useCallback(async (newConfig: GameConfig) => {
     setGameState("loading");
     setError(null);
-    setConfig(newConfig);
+
+    // ✅ Force square board by using only rows
+    const size = newConfig.rows;
+    const fixedConfig = { ...newConfig, rows: size, cols: size };
+    setConfig(fixedConfig);
+
     setScore(0);
     setMultiplier(1);
     setMultiplierRemaining(0);
     setCoreClicked(false);
 
-    const currentHighScore = getHighScore(newConfig);
+    const currentHighScore = getHighScore(fixedConfig);
     setHighScore(currentHighScore);
 
     try {
-      const response: BoardResponse = await fetchPredict(newConfig);
+      const response: BoardResponse = await fetchPredict(fixedConfig);
       setBoard(response.board);
 
-      // ✅ Fallback core zone if backend did not send one
-      const core = response.core || {
-        r0: Math.floor(newConfig.rows / 2) - 1,
-        r1: Math.floor(newConfig.rows / 2) + 2,
-        c0: Math.floor(newConfig.cols / 2) - 1,
-        c1: Math.floor(newConfig.cols / 2) + 2,
+      // ✅ Core fallback if backend didn't return it
+      const center = Math.floor(size / 2);
+      const fallbackCore = {
+        r0: center - 1,
+        r1: center + 2,
+        c0: center - 1,
+        c1: center + 2,
       };
-      setCoreZone(core);
 
+      setCoreZone(response.core ?? fallbackCore);
+
+      // Initialize tile states
       const initialTiles: TileState[][] = response.board.map(row =>
         row.map(cell => ({
           revealed: false,
           isScrap: cell === 1,
         }))
       );
-      setTiles(initialTiles);
 
+      setTiles(initialTiles);
       setGameState("playing");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start game");
@@ -88,17 +96,17 @@ export function useGame() {
           setGameState("gameover");
           const finalScore = score;
           saveHighScore(config, finalScore);
-          if (finalScore > highScore) {
-            setHighScore(finalScore);
-          }
+          if (finalScore > highScore) setHighScore(finalScore);
         } else {
           let points = 1;
 
           if (isInCore && !coreClicked) {
+            // Activate multiplier when first core tile clicked
             setCoreClicked(true);
             setMultiplier(2);
             setMultiplierRemaining(4);
           } else if (!isInCore && multiplierRemaining > 0) {
+            // Using multiplier outside core
             points = 2;
             setMultiplierRemaining(prev => prev - 1);
             if (multiplierRemaining === 1) setMultiplier(1);

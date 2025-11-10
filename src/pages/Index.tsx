@@ -13,14 +13,15 @@ import { toast } from "sonner";
 
 const Index = () => {
   const game = useGame();
-  const timer = useTimer(game.gameState === "playing");
+  useTimer(game.gameState === "playing"); // timer tied to game state
   const [modalType, setModalType] = useState<"rules" | "scores" | null>(null);
 
   const handleStart = async (config: typeof game.config) => {
     try {
-      await game.startGame(config);
-    } catch (error) {
-      toast.error("Failed to start game. Make sure the backend is running.");
+      // ✅ Force a square grid
+      await game.startGame({ ...config, cols: config.rows });
+    } catch {
+      toast.error("Failed to start game. Ensure backend is running.");
     }
   };
 
@@ -38,21 +39,23 @@ const Index = () => {
       />
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
+        {/* Home (Configure Screen) */}
         {game.gameState === "idle" && (
           <div className="w-full space-y-8">
             <div className="text-center space-y-4 mb-8">
               <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-lime bg-clip-text text-transparent">
-                Welcome to Build Plate Survivor
+                Build Plate Survivor
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Train your defect detection skills with ML-powered board generation. 
-                Click safe tiles, avoid scrap, and master the core mechanics to achieve high scores.
+                ML-Powered defect detection. Click safe tiles, avoid scrap, and master the core.
               </p>
             </div>
+
             <Settings onStart={handleStart} />
           </div>
         )}
 
+        {/* Loading Screen */}
         {game.gameState === "loading" && (
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -60,6 +63,7 @@ const Index = () => {
           </div>
         )}
 
+        {/* Gameplay */}
         {game.gameState === "playing" && (
           <div className="w-full space-y-6">
             <HUD
@@ -69,14 +73,15 @@ const Index = () => {
               highScore={game.highScore}
               isPlaying={true}
             />
+
             <Grid
               rows={game.config.rows}
-              cols={game.config.cols}
+              cols={game.config.rows} // ✅ always equal
               tiles={game.tiles}
               coreZone={game.coreZone}
-              overheatSector={timer.sector}
               onTileClick={game.revealTile}
             />
+
             <div className="flex justify-center">
               <Button variant="outline" onClick={game.resetGame}>
                 End Game
@@ -85,6 +90,7 @@ const Index = () => {
           </div>
         )}
 
+        {/* Error Block */}
         {game.error && (
           <div className="bg-destructive/10 border border-destructive rounded-lg p-4 max-w-md">
             <p className="text-destructive text-center">{game.error}</p>
@@ -97,12 +103,14 @@ const Index = () => {
         )}
       </main>
 
+      {/* Rules / High Scores Modal */}
       <Modal
         open={modalType !== null}
         onOpenChange={(open) => !open && setModalType(null)}
         type={modalType || "rules"}
       />
 
+      {/* Game Over Dialog */}
       <GameOverDialog
         open={game.gameState === "gameover"}
         score={game.score}

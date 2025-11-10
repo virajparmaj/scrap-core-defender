@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { GameConfig } from "@/lib/api";
 import { Rocket } from "lucide-react";
@@ -11,87 +17,99 @@ interface SettingsProps {
   disabled?: boolean;
 }
 
+const GRID_SIZES = Array.from({ length: 9 }, (_, i) => i + 3); // 3–11
+
 export function Settings({ onStart, disabled }: SettingsProps) {
-  const [rows, setRows] = useState(7);
-  const [cols, setCols] = useState(7);
+  const [size, setSize] = useState(7);
   const [powder, setPowder] = useState<"Virgin" | "Recycled">("Virgin");
   const [ta, setTa] = useState(false);
 
-  const handleStart = () => {
-    onStart({ rows, cols, powder, ta });
-  };
+  const handleStart = () =>
+    onStart({ rows: size, cols: size, powder, ta });
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6">
-      <div className="bg-card border border-border rounded-lg p-8 space-y-6">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-primary text-glow-cyan mb-2">Configure Your Build</h2>
-          <p className="text-muted-foreground text-sm">Select grid size and process parameters</p>
+    <div className="w-full max-w-lg mx-auto p-4">
+      <div className="bg-card border border-border rounded-lg p-6 space-y-5 shadow-xl">
+
+        {/* Title */}
+        <div className="text-center space-y-1 mb-2">
+          <h2 className="text-3xl font-bold text-primary text-glow-cyan">
+            Configure Your Build
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Select grid size and process parameters
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Rows */}
-          <div className="space-y-2">
-            <Label htmlFor="rows" className="font-mono text-sm uppercase tracking-wide">Rows</Label>
-            <Select value={rows.toString()} onValueChange={(v) => setRows(parseInt(v))}>
-              <SelectTrigger id="rows">
+        <div className="space-y-4">
+          {/* Grid Size */}
+          <div className="space-y-1 text-center">
+            <Label className="font-mono text-sm uppercase tracking-wide">
+              GRID SIZE (N × N)
+            </Label>
+            <Select value={size.toString()} onValueChange={(v) => setSize(parseInt(v))}>
+              <SelectTrigger className="w-40 mx-auto text-center h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 9 }, (_, i) => i + 3).map(n => (
-                  <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+              <SelectContent align="center">
+                {GRID_SIZES.map((n) => (
+                  <SelectItem
+                    key={n}
+                    value={n.toString()}
+                    className="text-center text-sm"
+                  >
+                    {n} × {n}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Columns */}
-          <div className="space-y-2">
-            <Label htmlFor="cols" className="font-mono text-sm uppercase tracking-wide">Columns</Label>
-            <Select value={cols.toString()} onValueChange={(v) => setCols(parseInt(v))}>
-              <SelectTrigger id="cols">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 9 }, (_, i) => i + 3).map(n => (
-                  <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Powder */}
-          <div className="space-y-2">
-            <Label htmlFor="powder" className="font-mono text-sm uppercase tracking-wide">Powder Phase</Label>
+          {/* Powder Phase */}
+          <div className="space-y-1 text-center">
+            <Label className="font-mono text-sm uppercase tracking-wide">
+              POWDER PHASE
+            </Label>
             <Select value={powder} onValueChange={(v) => setPowder(v as "Virgin" | "Recycled")}>
-              <SelectTrigger id="powder">
+              <SelectTrigger className="w-40 mx-auto text-center h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Virgin">Virgin</SelectItem>
-                <SelectItem value="Recycled">Recycled</SelectItem>
+              <SelectContent align="center">
+                <SelectItem className="text-center text-sm" value="Virgin">
+                  Virgin
+                </SelectItem>
+                <SelectItem className="text-center text-sm" value="Recycled">
+                  Recycled
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* TA */}
-          <div className="space-y-2">
-            <Label htmlFor="ta" className="font-mono text-sm uppercase tracking-wide">Thermal Anneal</Label>
-            <div className="flex items-center space-x-2 h-10">
-              <Switch id="ta" checked={ta} onCheckedChange={setTa} />
-              <span className="text-sm text-muted-foreground">{ta ? "Enabled" : "Disabled"}</span>
+          {/* Thermal Anneal */}
+          <div className="space-y-1 text-center">
+            <Label className="font-mono text-sm uppercase tracking-wide">
+              TEST ARTIFACTS
+            </Label>
+            <div className="flex justify-center items-center space-x-2">
+              <Switch checked={ta} onCheckedChange={setTa} />
+              <span className="text-sm text-muted-foreground">
+                {ta ? "Enabled" : "Disabled"}
+              </span>
             </div>
           </div>
         </div>
 
-        <Button
-          onClick={handleStart}
-          disabled={disabled}
-          className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground glow-cyan"
-        >
-          <Rocket className="mr-2 h-5 w-5" />
-          Start Game
-        </Button>
+        {/* Smaller Button */}
+        <div className="flex justify-center pt-2">
+          <Button
+            onClick={handleStart}
+            disabled={disabled}
+            className="w-64 h-10 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground glow-cyan"
+          >
+          <Rocket className="mr-4 h-8 w-8" />
+            Start Game
+          </Button>
+        </div>
       </div>
     </div>
   );
