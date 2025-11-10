@@ -101,20 +101,6 @@ export function Settings({ onStart, disabled }: SettingsProps) {
       {/* Notes outside the card */}
       <div className="mt-6 space-y-3 text-center">
 
-        {/* Scrap-rate note */}
-        <div className="flex flex-col items-center text-cyan-300 font-semibold text-sm leading-snug px-4">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sky-400 text-xl">⚡</span>
-            <span className="text-base font-bold tracking-wide text-cyan-200">
-              Model Scrap Notice
-            </span>
-          </div>
-          <p className="max-w-md text-cyan-100/80">
-            The model weights are tuned to yield ~10× more visible scrap for gameplay.
-            Real scrap rates are typically only <strong className="text-cyan-50">1–3%</strong>.
-          </p>
-        </div>
-
         {/* Free-tier cold start note */}
         <div className="flex flex-col items-center text-violet-300 font-semibold text-sm leading-snug px-4">
           <div className="flex items-center gap-2 mb-1">
@@ -130,6 +116,20 @@ export function Settings({ onStart, disabled }: SettingsProps) {
           </p>
         </div>
 
+        {/* Scrap-rate note */}
+        <div className="flex flex-col items-center text-cyan-300 font-semibold text-sm leading-snug px-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sky-400 text-xl">⚡</span>
+            <span className="text-base font-bold tracking-wide text-cyan-200">
+              Model Scrap Notice
+            </span>
+          </div>
+          <p className="max-w-md text-cyan-100/80">
+            The model weights are tuned to yield ~10× more visible scrap for gameplay.
+            Real scrap rates are typically only <strong className="text-cyan-50">1–3%</strong>.
+          </p>
+        </div>
+        
       </div>
     </div>
   );
