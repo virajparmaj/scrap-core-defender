@@ -125,7 +125,7 @@ export function Settings({ onStart, disabled }: SettingsProps) {
           </div>
           <p className="max-w-md text-violet-100/80">
             The GAME is hosted on a free server — the
-            <strong className="text-violet-50"> first setting may take 45–60 seconds to laod</strong>.
+            <strong className="text-violet-50"> first try may take 45–60 seconds to laod</strong>.
             Subsequent tries will work instantly.
           </p>
         </div>
