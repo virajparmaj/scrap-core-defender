@@ -124,9 +124,9 @@ export function Settings({ onStart, disabled }: SettingsProps) {
             </span>
           </div>
           <p className="max-w-md text-violet-100/80">
-            The backend is hosted on a free tier — the
-            <strong className="text-violet-50"> first API call may take 45–60 seconds</strong>.
-            Subsequent requests respond instantly.
+            The GAME is hosted on a free server — the
+            <strong className="text-violet-50"> first setting may take 45–60 seconds</strong>.
+            Subsequent tries will work instantly.
           </p>
         </div>
 
