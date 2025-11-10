@@ -3,6 +3,12 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import numpy as np
+
+import sklearn
+import numpy
+print("🔍 Backend Numpy Version:", numpy.__version__)
+print("🔍 Backend Sklearn Version:", sklearn.__version__)
+
 from pathlib import Path
 import joblib
 
