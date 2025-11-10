@@ -8,21 +8,19 @@ import { HUD } from "@/components/HUD";
 import { Modal } from "@/components/Modal";
 import { GameOverDialog } from "@/components/GameOverDialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-// ✅ Backend base URL (auto-switch between local + deployed)
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "https://scrap-core-defender.onrender.com";
 
 const Index = () => {
   const game = useGame();
   useTimer(game.gameState === "playing");
+
   const [modalType, setModalType] = useState<"rules" | "scores" | null>(null);
 
   const handleStart = async (config: typeof game.config) => {
     try {
-      // ✅ Build backend query
       const query = new URLSearchParams({
         rows: String(config.rows),
         cols: String(config.rows),
@@ -30,28 +28,21 @@ const Index = () => {
         ta: String(config.ta ? 1 : 0),
       });
 
-      // ✅ Fetch from Render backend
+      game.startGame(config); // triggers loading state immediately
+
       const response = await fetch(`${API_BASE_URL}/predict?${query}`);
       if (!response.ok) throw new Error(`API error: ${response.status}`);
       const data = await response.json();
 
-      // ✅ Launch game using backend board data
-      await game.startGame({
-        ...config,
-        backendBoard: data.board, // safe injection
-      });
+      game.finishLoading(data.board, data.core);
     } catch (err) {
       console.error(err);
-      toast.error(
-        "Failed to start game. Ensure backend API is reachable or model loaded."
-      );
+      toast.error("Server is waking up. Try again in a moment.");
+      game.resetGame();
     }
   };
 
-
-  const handleRestart = () => {
-    handleStart(game.config);
-  };
+  const handleRestart = () => handleStart(game.config);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -63,6 +54,8 @@ const Index = () => {
       />
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
+
+        {/* 🟡 Idle Screen */}
         {game.gameState === "idle" && (
           <div className="w-full space-y-8">
             <div className="text-center space-y-4 mb-8">
@@ -70,22 +63,40 @@ const Index = () => {
                 Build Plate Survivor
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Click Safe - Avoid Scrap - Master Core.
+                Click Safe — Avoid Scrap — Master The Core.
               </p>
             </div>
             <Settings onStart={handleStart} />
           </div>
         )}
 
+        {/* 🟣 NEW Loading Screen */}
         {game.gameState === "loading" && (
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground font-mono">
-              Generating build plate...
+          <div className="w-full flex flex-col items-center justify-center text-center py-16 space-y-4">
+            <div className="animate-pulse text-xl font-semibold text-primary mb-4">
+              ⚙️ Warming up the build chamber...
+            </div>
+
+            <p className="text-muted-foreground max-w-sm mb-4">
+              First game may take <strong>45–60 seconds</strong> while the server boots up.
+              Future games are <strong>instant.</strong>
             </p>
+
+            <div className="text-lg font-mono text-foreground">
+              {game.loadingSeconds}s elapsed...
+            </div>
+
+            <Button
+              onClick={game.resetGame}
+              variant="ghost"
+              className="mt-6 text-primary underline"
+            >
+              Cancel & Return
+            </Button>
           </div>
         )}
 
+        {/* 🟢 Playing */}
         {game.gameState === "playing" && (
           <div className="w-full space-y-6">
             <HUD
@@ -113,14 +124,13 @@ const Index = () => {
           </div>
         )}
 
+        {/* 🔥 Error state */}
         {game.error && (
-          <div className="bg-destructive/10 border border-destructive rounded-lg p-4 max-w-md">
-            <p className="text-destructive text-center">{game.error}</p>
-            <div className="mt-4 flex justify-center">
-              <Button onClick={game.resetGame} variant="outline">
-                Back to Home
-              </Button>
-            </div>
+          <div className="bg-destructive/10 border border-destructive rounded-lg p-4 max-w-md text-center">
+            <p className="text-destructive">{game.error}</p>
+            <Button onClick={game.resetGame} variant="outline" className="mt-4">
+              Back to Home
+            </Button>
           </div>
         )}
       </main>

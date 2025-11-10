@@ -29,17 +29,28 @@ export function useGame() {
 
   const [board, setBoard] = useState<number[][]>([]);
   const [tiles, setTiles] = useState<TileState[][]>([]);
-  const [coreMask, setCoreMask] = useState<boolean[][]>([]);   // ✅ boolean now
+  const [coreMask, setCoreMask] = useState<boolean[][]>([]); // ✅ boolean mask
 
   const [turnMode, setTurnMode] = useState<"core" | "noncore" | "free">("core");
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  /** ✅ Start Game */
+  /** ⏱ NEW: loading timer */
+  const [loadingSeconds, setLoadingSeconds] = useState(0);
+
+  /** ✅ Start Game + Track Cold Start Delay */
   const startGame = useCallback(async (newConfig: GameConfig) => {
     setGameState("loading");
     setError(null);
+    setLoadingSeconds(0);
+
+    // ✅ Start visible counter
+    let t = 0;
+    const interval = setInterval(() => {
+      t += 1;
+      setLoadingSeconds(t);
+    }, 1000);
 
     const size = newConfig.rows;
     const fixedConfig = { ...newConfig, rows: size, cols: size };
@@ -47,18 +58,17 @@ export function useGame() {
 
     setScore(0);
     setTurnMode("core");
-
     setHighScore(getHighScore(fixedConfig));
 
     try {
       const response: BoardResponse = await fetchPredict(fixedConfig);
 
+      clearInterval(interval); // ✅ stop timer when API responds
+
       setBoard(response.board);
 
-      // ✅ Convert core mask → boolean[][]
-      setCoreMask(
-        response.core.map(row => row.map(v => v === 1))
-      );
+      // ✅ core mask to boolean[][]
+      setCoreMask(response.core.map(row => row.map(v => v === 1)));
 
       const initialTiles = response.board.map(row =>
         row.map(cell => ({
@@ -70,10 +80,34 @@ export function useGame() {
       setTiles(initialTiles);
       setGameState("playing");
     } catch (err) {
+      clearInterval(interval); // ✅ also stop timer on error
       setError(err instanceof Error ? err.message : "Failed to start game.");
       setGameState("idle");
     }
   }, []);
+
+  /** ✅ Complete loading and enter gameplay */
+const finishLoading = useCallback(
+  (boardData: number[][], coreData: number[][]) => {
+    setBoard(boardData);
+
+    // coreData is numeric mask → convert to boolean mask
+    setCoreMask(coreData.map(row => row.map(v => v === 1)));
+
+    // create tiles array
+    const initialTiles = boardData.map(row =>
+      row.map(cell => ({
+        revealed: false,
+        isScrap: cell === 1,
+      }))
+    );
+
+    setTiles(initialTiles);
+    setGameState("playing");
+  },
+  []
+);
+
 
   /** ✅ Reveal Logic */
   const revealTile = useCallback(
@@ -82,7 +116,7 @@ export function useGame() {
 
       const inCore = coreMask[row]?.[col];
 
-      // turn-based logic (until core is fully revealed)
+      // turn sequencing (before core is fully revealed)
       if (turnMode === "core" && !inCore) return;
       if (turnMode === "noncore" && inCore) return;
 
@@ -103,7 +137,7 @@ export function useGame() {
         setScore(s => s + 1);
 
         if (isCoreFullyRevealed(newTiles, coreMask)) {
-          setTurnMode("free"); // ✅ unlock full play mode
+          setTurnMode("free"); // ✅ unlocked
         } else {
           setTurnMode(prev => (prev === "core" ? "noncore" : "core"));
         }
@@ -123,6 +157,7 @@ export function useGame() {
     setScore(0);
     setTurnMode("core");
     setError(null);
+    setLoadingSeconds(0);
   }, []);
 
   return {
@@ -135,7 +170,9 @@ export function useGame() {
     score,
     highScore,
     error,
+    loadingSeconds,        // <-- Include new timer
     startGame,
+    finishLoading,         // <-- Make available to Index.tsx
     revealTile,
     resetGame,
   };
