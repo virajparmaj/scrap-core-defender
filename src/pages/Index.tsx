@@ -101,7 +101,7 @@ const Index = () => {
               rows={game.config.rows}
               cols={game.config.rows}
               tiles={game.tiles}
-              coreZone={game.coreZone}
+              coreMask={game.coreMask}
               turnMode={game.turnMode}
               onTileClick={game.revealTile}
             />

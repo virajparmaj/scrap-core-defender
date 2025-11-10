@@ -12,7 +12,12 @@ export interface BoardResponse {
   rows: number;
   cols: number;
   board: number[][];
-  core?: { r0: number; r1: number; c0: number; c1: number }; // ✅ optional fallback support
+
+  /** ✅ Preferred: core mask matrix */
+  core?: number[][];
+
+  /** ⚠️ Legacy fallback (ignored if core mask exists) */
+  bounds?: { r0: number; r1: number; c0: number; c1: number };
 }
 
 export async function fetchPredict(config: GameConfig): Promise<BoardResponse> {

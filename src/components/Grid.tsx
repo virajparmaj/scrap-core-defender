@@ -6,13 +6,13 @@ interface GridProps {
   rows: number;
   cols: number;
   tiles: TileState[][];
-  coreZone: { r0: number; r1: number; c0: number; c1: number };
+  coreMask: number[][]; // ✅ backend core mask
   turnMode: "core" | "noncore" | "free";
   onTileClick: (row: number, col: number) => void;
 }
 
-export function Grid({ rows, cols, tiles, coreZone, turnMode, onTileClick }: GridProps) {
-  if (!tiles.length || !coreZone) {
+export function Grid({ rows, cols, tiles, coreMask, turnMode, onTileClick }: GridProps) {
+  if (!tiles.length || !coreMask.length) {
     return (
       <div className="flex justify-center text-primary mt-10 animate-pulse">
         Generating board...
@@ -20,8 +20,8 @@ export function Grid({ rows, cols, tiles, coreZone, turnMode, onTileClick }: Gri
     );
   }
 
-  const inCore = (r: number, c: number) =>
-    r >= coreZone.r0 && r < coreZone.r1 && c >= coreZone.c0 && c < coreZone.c1;
+  // ✅ Core membership now comes from backend mask
+  const inCore = (r: number, c: number) => coreMask[r][c] === 1;
 
   const canClick = (r: number, c: number) => {
     if (tiles[r][c].revealed) return false;
@@ -84,20 +84,20 @@ export function Grid({ rows, cols, tiles, coreZone, turnMode, onTileClick }: Gri
                     className={cn(
                       "aspect-square rounded-md border transition-transform duration-150 will-change-transform",
 
-                      // Revealed state
+                      // ✅ Revealed states
                       tile.revealed && tile.isScrap && "bg-red-600 border-red-400 rotate-90",
                       tile.revealed && !tile.isScrap && "bg-green-500 border-green-300 rotate-90",
 
-                      // Hidden but clickable
+                      // ✅ Hidden + clickable
                       !tile.revealed && clickable && "bg-neutral-800 border-neutral-600 hover:scale-105 cursor-pointer",
 
-                      // Hidden but not clickable
+                      // ✅ Hidden + not clickable
                       !tile.revealed && !clickable && "bg-neutral-900 border-neutral-800 opacity-40 cursor-not-allowed",
 
-                      // Highlight core when core-turn
+                      // ✅ Highlight core during core-turn
                       core && !tile.revealed && turnMode === "core" && "ring-2 ring-blue-400/60",
 
-                      // Highlight non-core when noncore-turn
+                      // ✅ Highlight non-core during noncore-turn
                       !core && !tile.revealed && turnMode === "noncore" && "ring-1 ring-yellow-300/40"
                     )}
                   />
