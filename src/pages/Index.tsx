@@ -13,12 +13,11 @@ import { toast } from "sonner";
 
 const Index = () => {
   const game = useGame();
-  useTimer(game.gameState === "playing"); // timer tied to game state
+  useTimer(game.gameState === "playing");
   const [modalType, setModalType] = useState<"rules" | "scores" | null>(null);
 
   const handleStart = async (config: typeof game.config) => {
     try {
-      // ✅ Force a square grid
       await game.startGame({ ...config, cols: config.rows });
     } catch {
       toast.error("Failed to start game. Ensure backend is running.");
@@ -39,7 +38,7 @@ const Index = () => {
       />
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
-        {/* Home (Configure Screen) */}
+
         {game.gameState === "idle" && (
           <div className="w-full space-y-8">
             <div className="text-center space-y-4 mb-8">
@@ -55,7 +54,6 @@ const Index = () => {
           </div>
         )}
 
-        {/* Loading Screen */}
         {game.gameState === "loading" && (
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -63,7 +61,6 @@ const Index = () => {
           </div>
         )}
 
-        {/* Gameplay */}
         {game.gameState === "playing" && (
           <div className="w-full space-y-6">
             <HUD
@@ -76,9 +73,10 @@ const Index = () => {
 
             <Grid
               rows={game.config.rows}
-              cols={game.config.rows} // ✅ always equal
+              cols={game.config.rows}
               tiles={game.tiles}
               coreZone={game.coreZone}
+              turnMode={game.turnMode}    // ✅ <-- Now works
               onTileClick={game.revealTile}
             />
 
@@ -90,7 +88,6 @@ const Index = () => {
           </div>
         )}
 
-        {/* Error Block */}
         {game.error && (
           <div className="bg-destructive/10 border border-destructive rounded-lg p-4 max-w-md">
             <p className="text-destructive text-center">{game.error}</p>
@@ -103,14 +100,12 @@ const Index = () => {
         )}
       </main>
 
-      {/* Rules / High Scores Modal */}
       <Modal
         open={modalType !== null}
         onOpenChange={(open) => !open && setModalType(null)}
         type={modalType || "rules"}
       />
 
-      {/* Game Over Dialog */}
       <GameOverDialog
         open={game.gameState === "gameover"}
         score={game.score}

@@ -6,25 +6,30 @@ interface GridProps {
   rows: number;
   cols: number;
   tiles: TileState[][];
-  coreZone?: { r0: number; r1: number; c0: number; c1: number };
+  coreZone: { r0: number; r1: number; c0: number; c1: number };
+  turnMode: "core" | "noncore" | "free";
   onTileClick: (row: number, col: number) => void;
 }
 
-export function Grid({ rows, cols, tiles, coreZone, onTileClick }: GridProps) {
-  // If board not ready yet → don't render grid yet
+export function Grid({ rows, cols, tiles, coreZone, turnMode, onTileClick }: GridProps) {
   if (!tiles.length || !coreZone) {
     return (
       <div className="flex justify-center text-primary mt-10 animate-pulse">
-        Building core zone...
+        Generating board...
       </div>
     );
   }
 
-  const isInCore = (row: number, col: number) =>
-    row >= coreZone.r0 &&
-    row < coreZone.r1 &&
-    col >= coreZone.c0 &&
-    col < coreZone.c1;
+  const inCore = (r: number, c: number) =>
+    r >= coreZone.r0 && r < coreZone.r1 && c >= coreZone.c0 && c < coreZone.c1;
+
+  const canClick = (r: number, c: number) => {
+    if (tiles[r][c].revealed) return false;
+    if (turnMode === "free") return true;
+    if (turnMode === "core" && inCore(r, c)) return true;
+    if (turnMode === "noncore" && !inCore(r, c)) return true;
+    return false;
+  };
 
   return (
     <div className="flex items-center justify-center p-4">
@@ -32,13 +37,13 @@ export function Grid({ rows, cols, tiles, coreZone, onTileClick }: GridProps) {
 
         {/* Column Labels */}
         <div className="flex mb-2 ml-8">
-          {Array.from({ length: cols }, (_, i) => (
+          {Array.from({ length: cols }, (_, c) => (
             <div
-              key={i}
+              key={c}
               className="flex items-center justify-center font-mono text-xs text-primary"
               style={{ width: "clamp(32px, 8vw, 64px)" }}
             >
-              {getColumnLabel(i)}
+              {getColumnLabel(c)}
             </div>
           ))}
         </div>
@@ -46,13 +51,13 @@ export function Grid({ rows, cols, tiles, coreZone, onTileClick }: GridProps) {
         <div className="flex">
           {/* Row Labels */}
           <div className="flex flex-col mr-2">
-            {Array.from({ length: rows }, (_, i) => (
+            {Array.from({ length: rows }, (_, r) => (
               <div
-                key={i}
+                key={r}
                 className="flex items-center justify-center font-mono text-xs text-primary"
                 style={{ height: "clamp(32px, 8vw, 64px)" }}
               >
-                {getRowLabel(i)}
+                {getRowLabel(r)}
               </div>
             ))}
           </div>
@@ -66,22 +71,34 @@ export function Grid({ rows, cols, tiles, coreZone, onTileClick }: GridProps) {
               gap: "8px",
             }}
           >
-            {tiles.map((row, rowIdx) =>
-              row.map((tile, colIdx) => {
-                const inCore = isInCore(rowIdx, colIdx);
+            {tiles.map((row, r) =>
+              row.map((tile, c) => {
+                const core = inCore(r, c);
+                const clickable = canClick(r, c);
 
                 return (
                   <button
-                    key={`${rowIdx}-${colIdx}`}
-                    onClick={() => onTileClick(rowIdx, colIdx)}
-                    disabled={tile.revealed}
+                    key={`${r}-${c}`}
+                    onClick={() => clickable && onTileClick(r, c)}
+                    disabled={!clickable}
                     className={cn(
-                      "aspect-square rounded-md border border-neutral-700 transition-transform duration-150",
-                      "will-change-transform",
-                      !tile.revealed && "bg-neutral-800 hover:scale-105",
+                      "aspect-square rounded-md border transition-transform duration-150 will-change-transform",
+
+                      // Revealed state
                       tile.revealed && tile.isScrap && "bg-red-600 border-red-400 rotate-90",
                       tile.revealed && !tile.isScrap && "bg-green-500 border-green-300 rotate-90",
-                      inCore && !tile.revealed && "ring-1 ring-white/30"
+
+                      // Hidden but clickable
+                      !tile.revealed && clickable && "bg-neutral-800 border-neutral-600 hover:scale-105 cursor-pointer",
+
+                      // Hidden but not clickable
+                      !tile.revealed && !clickable && "bg-neutral-900 border-neutral-800 opacity-40 cursor-not-allowed",
+
+                      // Highlight core when core-turn
+                      core && !tile.revealed && turnMode === "core" && "ring-2 ring-blue-400/60",
+
+                      // Highlight non-core when noncore-turn
+                      !core && !tile.revealed && turnMode === "noncore" && "ring-1 ring-yellow-300/40"
                     )}
                   />
                 );

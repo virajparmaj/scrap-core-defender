@@ -9,6 +9,27 @@ export interface TileState {
   isScrap: boolean;
 }
 
+/** ✅ Check if core is fully revealed */
+function isCoreFullyRevealed(
+  tiles: TileState[][],
+  core: { r0: number; r1: number; c0: number; c1: number }
+) {
+  for (let r = core.r0; r < core.r1; r++) {
+    for (let c = core.c0; c < core.c1; c++) {
+      if (!tiles[r][c].revealed) return false;
+    }
+  }
+  return true;
+}
+
+/** ✅ New Correct Core Size Rule */
+function computeCore(rows: number, cols: number) {
+  const k = Math.floor(Math.min(rows, cols) / 2);
+  const r0 = Math.floor((rows - k) / 2);
+  const c0 = Math.floor((cols - k) / 2);
+  return { r0, r1: r0 + k, c0, c1: c0 + k };
+}
+
 export function useGame() {
   const [gameState, setGameState] = useState<GameState>("idle");
   const [config, setConfig] = useState<GameConfig>({
@@ -17,13 +38,15 @@ export function useGame() {
     powder: "Virgin",
     ta: false,
   });
+
   const [board, setBoard] = useState<number[][]>([]);
   const [tiles, setTiles] = useState<TileState[][]>([]);
   const [coreZone, setCoreZone] = useState({ r0: 0, r1: 0, c0: 0, c1: 0 });
+
+  /** ✅ turn mode: "core" → "noncore" → ... → "free" */
+  const [turnMode, setTurnMode] = useState<"core" | "noncore" | "free">("core");
+
   const [score, setScore] = useState(0);
-  const [multiplier, setMultiplier] = useState(1);
-  const [multiplierRemaining, setMultiplierRemaining] = useState(0);
-  const [coreClicked, setCoreClicked] = useState(false);
   const [highScore, setHighScore] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,15 +54,12 @@ export function useGame() {
     setGameState("loading");
     setError(null);
 
-    // ✅ Force square board by using only rows
-    const size = newConfig.rows;
+    const size = newConfig.rows; // enforce square
     const fixedConfig = { ...newConfig, rows: size, cols: size };
     setConfig(fixedConfig);
 
     setScore(0);
-    setMultiplier(1);
-    setMultiplierRemaining(0);
-    setCoreClicked(false);
+    setTurnMode("core");
 
     const currentHighScore = getHighScore(fixedConfig);
     setHighScore(currentHighScore);
@@ -48,19 +68,10 @@ export function useGame() {
       const response: BoardResponse = await fetchPredict(fixedConfig);
       setBoard(response.board);
 
-      // ✅ Core fallback if backend didn't return it
-      const center = Math.floor(size / 2);
-      const fallbackCore = {
-        r0: center - 1,
-        r1: center + 2,
-        c0: center - 1,
-        c1: center + 2,
-      };
+      /** ✅ Correct core ALWAYS computed */
+      setCoreZone(computeCore(size, size));
 
-      setCoreZone(response.core ?? fallbackCore);
-
-      // Initialize tile states
-      const initialTiles: TileState[][] = response.board.map(row =>
+      const initialTiles = response.board.map(row =>
         row.map(cell => ({
           revealed: false,
           isScrap: cell === 1,
@@ -79,6 +90,16 @@ export function useGame() {
     (row: number, col: number) => {
       if (gameState !== "playing") return;
 
+      const inCore =
+        row >= coreZone.r0 &&
+        row < coreZone.r1 &&
+        col >= coreZone.c0 &&
+        col < coreZone.c1;
+
+      // ✅ Turn enforcement (disabled after core cleared)
+      if (turnMode === "core" && !inCore) return;
+      if (turnMode === "noncore" && inCore) return;
+
       setTiles(prev => {
         if (prev[row][col].revealed) return prev;
 
@@ -86,39 +107,29 @@ export function useGame() {
         newTiles[row][col] = { ...newTiles[row][col], revealed: true };
 
         const isScrap = newTiles[row][col].isScrap;
-        const isInCore =
-          row >= coreZone.r0 &&
-          row < coreZone.r1 &&
-          col >= coreZone.c0 &&
-          col < coreZone.c1;
 
         if (isScrap) {
           setGameState("gameover");
           const finalScore = score;
           saveHighScore(config, finalScore);
           if (finalScore > highScore) setHighScore(finalScore);
+          return newTiles;
+        }
+
+        setScore(prev => prev + 1);
+
+        // ✅ Check if core completed → unlock free mode
+        if (isCoreFullyRevealed(newTiles, coreZone)) {
+          setTurnMode("free");
         } else {
-          let points = 1;
-
-          if (isInCore && !coreClicked) {
-            // Activate multiplier when first core tile clicked
-            setCoreClicked(true);
-            setMultiplier(2);
-            setMultiplierRemaining(4);
-          } else if (!isInCore && multiplierRemaining > 0) {
-            // Using multiplier outside core
-            points = 2;
-            setMultiplierRemaining(prev => prev - 1);
-            if (multiplierRemaining === 1) setMultiplier(1);
-          }
-
-          setScore(prev => prev + points);
+          // Alternate turn: core → noncore → core → …
+          setTurnMode(prev => (prev === "core" ? "noncore" : "core"));
         }
 
         return newTiles;
       });
     },
-    [gameState, coreZone, score, config, highScore, coreClicked, multiplierRemaining]
+    [gameState, coreZone, score, config, highScore, turnMode]
   );
 
   const resetGame = useCallback(() => {
@@ -126,9 +137,7 @@ export function useGame() {
     setBoard([]);
     setTiles([]);
     setScore(0);
-    setMultiplier(1);
-    setMultiplierRemaining(0);
-    setCoreClicked(false);
+    setTurnMode("core");
     setError(null);
   }, []);
 
@@ -138,9 +147,8 @@ export function useGame() {
     board,
     tiles,
     coreZone,
+    turnMode,
     score,
-    multiplier,
-    multiplierRemaining,
     highScore,
     error,
     startGame,

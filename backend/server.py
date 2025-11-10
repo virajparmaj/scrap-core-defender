@@ -41,14 +41,29 @@ def _logit(p):
     p = np.clip(p, 1e-9, 1-1e-9)
     return np.log(p/(1-p))
 
-def core_window(rows:int, cols:int):
+def core_window(rows: int, cols: int):
     """
-    Compute centered core region.
-    Core size = floor(min(rows, cols) / 2)
-    (ensures correct behavior for both even and odd plate sizes.)
+    Select core zone based on grid size:
+      3x3  → 1x1
+      4x4  → 2x2
+      5x5  → 3x3
+      6x6, 7x7  → 4x4
+      8x8+ → 6x6 (up to 11x11 max board size)
     """
-    k = max(1, min(rows, cols) // 2)
+    n = min(rows, cols)
 
+    if n <= 3:
+        k = 1
+    elif n == 4:
+        k = 2
+    elif n == 5:
+        k = 3
+    elif n in (6, 7):
+        k = 4
+    else:
+        k = 6  # applies to 8,9,10,11
+
+    # Center the core
     r0 = (rows - k) // 2
     c0 = (cols - k) // 2
     r1 = r0 + k
