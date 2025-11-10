@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export interface GameConfig {
   rows: number;
@@ -11,28 +11,16 @@ export interface BoardResponse {
   rows: number;
   cols: number;
   board: number[][];
-  core: {
-    r0: number;
-    r1: number;
-    c0: number;
-    c1: number;
-  };
+  core: { r0: number; r1: number; c0: number; c1: number };
 }
 
 export async function fetchPredict(config: GameConfig): Promise<BoardResponse> {
-  const params = new URLSearchParams({
-    rows: config.rows.toString(),
-    cols: config.cols.toString(),
-    powder: config.powder,
-    ta: config.ta ? "1" : "0",
-  });
-
-  const response = await fetch(`${API_URL}/predict?${params}`);
+  const url = `${BASE}/predict?rows=${config.rows}&cols=${config.cols}&powder=${config.powder}&ta=${config.ta ? 1 : 0}`;
   
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "Unknown error" }));
-    throw new Error(error.detail || "Failed to fetch board");
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status}`);
   }
 
-  return response.json();
+  return res.json();
 }

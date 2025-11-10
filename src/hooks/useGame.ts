@@ -35,16 +35,23 @@ export function useGame() {
     setMultiplier(1);
     setMultiplierRemaining(0);
     setCoreClicked(false);
-    
+
     const currentHighScore = getHighScore(newConfig);
     setHighScore(currentHighScore);
 
     try {
       const response: BoardResponse = await fetchPredict(newConfig);
       setBoard(response.board);
-      setCoreZone(response.core);
-      
-      // Initialize all tiles as hidden
+
+      // ✅ Fallback core zone if backend did not send one
+      const core = response.core || {
+        r0: Math.floor(newConfig.rows / 2) - 1,
+        r1: Math.floor(newConfig.rows / 2) + 2,
+        c0: Math.floor(newConfig.cols / 2) - 1,
+        c1: Math.floor(newConfig.cols / 2) + 2,
+      };
+      setCoreZone(core);
+
       const initialTiles: TileState[][] = response.board.map(row =>
         row.map(cell => ({
           revealed: false,
@@ -52,6 +59,7 @@ export function useGame() {
         }))
       );
       setTiles(initialTiles);
+
       setGameState("playing");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start game");
@@ -59,50 +67,51 @@ export function useGame() {
     }
   }, []);
 
-  const revealTile = useCallback((row: number, col: number) => {
-    if (gameState !== "playing") return;
+  const revealTile = useCallback(
+    (row: number, col: number) => {
+      if (gameState !== "playing") return;
 
-    setTiles(prev => {
-      if (prev[row][col].revealed) return prev;
+      setTiles(prev => {
+        if (prev[row][col].revealed) return prev;
 
-      const newTiles = prev.map(r => [...r]);
-      newTiles[row][col] = { ...newTiles[row][col], revealed: true };
+        const newTiles = prev.map(r => [...r]);
+        newTiles[row][col] = { ...newTiles[row][col], revealed: true };
 
-      const isScrap = newTiles[row][col].isScrap;
-      const isInCore = row >= coreZone.r0 && row < coreZone.r1 && 
-                       col >= coreZone.c0 && col < coreZone.c1;
+        const isScrap = newTiles[row][col].isScrap;
+        const isInCore =
+          row >= coreZone.r0 &&
+          row < coreZone.r1 &&
+          col >= coreZone.c0 &&
+          col < coreZone.c1;
 
-      if (isScrap) {
-        setGameState("gameover");
-        const finalScore = score;
-        saveHighScore(config, finalScore);
-        if (finalScore > highScore) {
-          setHighScore(finalScore);
-        }
-      } else {
-        // Safe tile
-        let points = 1;
-        
-        if (isInCore && !coreClicked) {
-          // First core click - activate multiplier
-          setCoreClicked(true);
-          setMultiplier(2);
-          setMultiplierRemaining(4);
-        } else if (!isInCore && multiplierRemaining > 0) {
-          // Outside core with active multiplier
-          points = 2;
-          setMultiplierRemaining(prev => prev - 1);
-          if (multiplierRemaining === 1) {
-            setMultiplier(1);
+        if (isScrap) {
+          setGameState("gameover");
+          const finalScore = score;
+          saveHighScore(config, finalScore);
+          if (finalScore > highScore) {
+            setHighScore(finalScore);
           }
-        }
-        
-        setScore(prev => prev + points);
-      }
+        } else {
+          let points = 1;
 
-      return newTiles;
-    });
-  }, [gameState, coreZone, score, config, highScore, coreClicked, multiplierRemaining]);
+          if (isInCore && !coreClicked) {
+            setCoreClicked(true);
+            setMultiplier(2);
+            setMultiplierRemaining(4);
+          } else if (!isInCore && multiplierRemaining > 0) {
+            points = 2;
+            setMultiplierRemaining(prev => prev - 1);
+            if (multiplierRemaining === 1) setMultiplier(1);
+          }
+
+          setScore(prev => prev + points);
+        }
+
+        return newTiles;
+      });
+    },
+    [gameState, coreZone, score, config, highScore, coreClicked, multiplierRemaining]
+  );
 
   const resetGame = useCallback(() => {
     setGameState("idle");
