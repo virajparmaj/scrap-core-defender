@@ -18,59 +18,71 @@ export function Modal({ open, onOpenChange, type }: ModalProps) {
           </DialogHeader>
           <ScrollArea className="h-[60vh] pr-4">
             <div className="space-y-4 text-sm">
+
+              {/* Objective */}
               <section>
                 <h3 className="font-bold text-lg text-foreground mb-2">🎮 Objective</h3>
                 <p className="text-muted-foreground">
-                  Reveal as many safe tiles as possible without hitting scrap. Each safe tile increases your score.
+                  Reveal as many safe tiles as possible without hitting scrap. Each safe reveal earns points. Hitting scrap ends the run.
                 </p>
               </section>
 
+              {/* Setup */}
               <section>
                 <h3 className="font-bold text-lg text-foreground mb-2">⚙️ Setup</h3>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   <li>Select grid size (3×3 to 11×11)</li>
-                  <li>Choose powder type: Virgin or Recycled</li>
-                  <li>Toggle TEST ARTIFACTS (TA) on/off</li>
+                  <li>Choose powder condition: <strong>Virgin</strong> or <strong>Recycled</strong></li>
+                  <li>Optional: Enable <strong>TEST ARTIFACTS (TA)</strong> to introduce patterned visual noise</li>
                 </ul>
               </section>
 
+              {/* Tile Types */}
               <section>
                 <h3 className="font-bold text-lg text-foreground mb-2">🎯 Tile Types</h3>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li><span className="text-safe font-bold">Green</span> = Safe tile (+1 point)</li>
-                  <li><span className="text-scrap font-bold">Red</span> = Scrap (Game Over)</li>
-                  <li><span className="text-primary font-bold">Core Zone</span> (outlined) = Always safe, thermally stable</li>
-                  <li><span className="text-unstable font-bold">Amber ring</span> = Unstable zone (changes every 10s)</li>
+                  <li><span className="text-safe font-bold">Green</span> — Safe tile (+1 point)</li>
+                  <li><span className="text-scrap font-bold">Red</span> — Scrap (Game Over)</li>
+                  <li><span className="text-primary font-bold">Core Zone</span> — Center region that is always safe</li>
+                  <li><span className="text-unstable font-bold">Unstable Ring</span> — Visually shifts over time (safe, but unpredictable in pattern)</li>
                 </ul>
               </section>
 
+              {/* Core Mechanics */}
               <section>
                 <h3 className="font-bold text-lg text-foreground mb-2">🔥 Core Mechanics</h3>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li><strong>Core Combo:</strong> Click any core tile first to activate ×2 multiplier for next 4 reveals outside core</li>
-                  <li><strong>Overheat Timer:</strong> Unstable zones rotate every 10 seconds. Clicking there breaks your combo but is otherwise safe</li>
-                  <li><strong>Safe Core:</strong> Center tiles (3×3, 2×2, or 1×1 depending on grid size) are guaranteed safe</li>
+                  <li><strong>Turn Order:</strong> The game begins in <strong>Core Mode</strong>. Your first click must be inside the Core.</li>
+                  <li>After each reveal, turn mode alternates:
+                    <br />→ Core → Non-Core → Core → Non-Core → …
+                  </li>
+                  <li><strong>Free Mode Unlock:</strong> Once <strong>every core tile</strong> has been revealed, all turn restrictions are removed — you may click freely anywhere.</li>
+                  <li><strong>Core Size:</strong> Depends on board size (1×1, 2×2, or 3×3). These tiles are guaranteed safe.</li>
                 </ul>
               </section>
 
+              {/* Scoring */}
               <section>
                 <h3 className="font-bold text-lg text-foreground mb-2">🏆 Scoring</h3>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li>Safe tile = +1 point (or +2 with active multiplier)</li>
-                  <li>High scores are saved per configuration</li>
-                  <li>Try to beat your previous records!</li>
+                  <li>Each safe reveal = <strong>+1 point</strong></li>
+                  <li>Game ends immediately on scrap</li>
+                  <li>High scores are tracked separately for each grid configuration</li>
+                  <li>Challenge yourself to beat past runs!</li>
                 </ul>
               </section>
 
+              {/* Strategy Tips */}
               <section>
                 <h3 className="font-bold text-lg text-foreground mb-2">💡 Strategy Tips</h3>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li>Start with core tiles to activate the multiplier</li>
-                  <li>Work outward strategically from the safe center</li>
-                  <li>Watch the overheat timer to avoid breaking combos</li>
-                  <li>Larger grids = more risk but higher potential scores</li>
+                  <li>Start by clearing the Core first — unlocking free mode removes restrictions</li>
+                  <li>Expand outward methodically once the Core is secured</li>
+                  <li>Use board symmetry to your advantage</li>
+                  <li>Larger boards = harder, but higher scoring potential</li>
                 </ul>
               </section>
+
             </div>
           </ScrollArea>
         </DialogContent>
