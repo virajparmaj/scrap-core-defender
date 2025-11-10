@@ -47,34 +47,46 @@ def _logit(p):
 
 def core_window(rows: int, cols: int):
     """
-    Select core zone based on grid size:
+    Centered core region sizes:
       3x3  → 1x1
       4x4  → 2x2
       5x5  → 3x3
-      6x6, 7x7  → 4x4
-      8x8+ → 6x6 (up to 11x11 max board size)
+      6x6  → 4x4
+      7x7  → 3x3
+      8x8  → 6x6
+      9x9  → 5x5
+      10x10 → 6x6
+      11x11 → 7x7
     """
     n = min(rows, cols)
 
-    if n <= 3:
+    if n == 3:
         k = 1
     elif n == 4:
         k = 2
     elif n == 5:
         k = 3
-    elif n in (6, 7):
+    elif n == 6:
         k = 4
+    elif n == 7:
+        k = 3
+    elif n == 8:
+        k = 6
+    elif n == 9:
+        k = 5
+    elif n == 10:
+        k = 6
+    elif n == 11:
+        k = 7
     else:
-        k = 6  # applies to 8,9,10,11
+        # fallback: center odd-size core
+        k = max(1, (n // 2) | 1)
 
-    # Center the core
     r0 = (rows - k) // 2
     c0 = (cols - k) // 2
-    r1 = r0 + k
-    c1 = c0 + k
 
     mask = np.zeros((rows, cols), dtype=bool)
-    mask[r0:r1, c0:c1] = True
+    mask[r0:r0+k, c0:c0+k] = True
     return mask
 
 def random_spatial_transform(P):
@@ -207,12 +219,15 @@ def predict(
         P, base_target=targetRate, temperature=temperature, min_scraps=minScraps
     )
 
+    core = core_window(rows, cols)  # boolean mask
+
     return {
         "rows": rows,
         "cols": cols,
         "powder": powder,
         "ta": ta,
         "board": board.tolist(),
+        "core": core.astype(int).tolist(),   # ✅ core mask now included
         "mean_prob": float(np.mean(P)),
         "forced": forced,
         "effective_target_rate_noncore": targetRate,
