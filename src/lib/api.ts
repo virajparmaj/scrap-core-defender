@@ -5,6 +5,7 @@ export interface GameConfig {
   rows: number; // N × N grid
   powder: "Virgin" | "Recycled";
   ta: boolean;
+  backendBoard?: number[][]; // optional for injected backend data
 }
 
 export interface BoardResponse {

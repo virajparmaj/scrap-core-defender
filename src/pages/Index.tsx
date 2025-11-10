@@ -38,7 +38,6 @@ const Index = () => {
       // ✅ Launch game using backend board data
       await game.startGame({
         ...config,
-        cols: config.rows,
         backendBoard: data.board, // safe injection
       });
     } catch (err) {

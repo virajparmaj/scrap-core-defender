@@ -23,7 +23,6 @@ export function useGame() {
   const [gameState, setGameState] = useState<GameState>("idle");
   const [config, setConfig] = useState<GameConfig>({
     rows: 7,
-    cols: 7,
     powder: "Virgin",
     ta: false,
   });
