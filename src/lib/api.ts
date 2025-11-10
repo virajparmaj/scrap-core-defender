@@ -5,6 +5,7 @@ export interface GameConfig {
   cols?: number; // ✅ now optional, always overridden
   powder: "Virgin" | "Recycled";
   ta: boolean;
+  backendBoard?: number[][]; // ✅ optional board from backend
 }
 
 export interface BoardResponse {

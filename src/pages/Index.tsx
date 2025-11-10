@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+// ✅ Backend base URL (auto-switch between local + deployed)
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "https://scrap-core-defender.onrender.com";
+
 const Index = () => {
   const game = useGame();
   useTimer(game.gameState === "playing");
@@ -18,11 +22,33 @@ const Index = () => {
 
   const handleStart = async (config: typeof game.config) => {
     try {
-      await game.startGame({ ...config, cols: config.rows });
-    } catch {
-      toast.error("Failed to start game. Ensure backend is running.");
+      // ✅ Build backend query
+      const query = new URLSearchParams({
+        rows: String(config.rows),
+        cols: String(config.rows),
+        powder: config.powder,
+        ta: String(config.ta ? 1 : 0),
+      });
+
+      // ✅ Fetch from Render backend
+      const response = await fetch(`${API_BASE_URL}/predict?${query}`);
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const data = await response.json();
+
+      // ✅ Launch game using backend board data
+      await game.startGame({
+        ...config,
+        cols: config.rows,
+        backendBoard: data.board, // safe injection
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        "Failed to start game. Ensure backend API is reachable or model loaded."
+      );
     }
   };
+
 
   const handleRestart = () => {
     handleStart(game.config);
@@ -38,7 +64,6 @@ const Index = () => {
       />
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
-
         {game.gameState === "idle" && (
           <div className="w-full space-y-8">
             <div className="text-center space-y-4 mb-8">
@@ -49,7 +74,6 @@ const Index = () => {
                 ML-Powered defect detection. Click safe tiles, avoid scrap, and master the core.
               </p>
             </div>
-
             <Settings onStart={handleStart} />
           </div>
         )}
@@ -57,7 +81,9 @@ const Index = () => {
         {game.gameState === "loading" && (
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground font-mono">Generating build plate...</p>
+            <p className="text-muted-foreground font-mono">
+              Generating build plate...
+            </p>
           </div>
         )}
 
@@ -76,7 +102,7 @@ const Index = () => {
               cols={game.config.rows}
               tiles={game.tiles}
               coreZone={game.coreZone}
-              turnMode={game.turnMode}    // ✅ <-- Now works
+              turnMode={game.turnMode}
               onTileClick={game.revealTile}
             />
 

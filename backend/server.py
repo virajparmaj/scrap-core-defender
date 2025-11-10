@@ -3,26 +3,30 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import numpy as np
+from pathlib import Path
+import joblib
 
-# Ensure model lookup path
-os.environ.setdefault(
-    "ARTIFACT_PATH",
-    os.path.join(os.path.dirname(__file__), "artifacts", "scrap_model_anygrid.joblib"),
-)
+# --- Model Path ---
+MODEL_PATH = Path(__file__).parent / "artifacts" / "scrap_model_anygrid.joblib"
 
-from scrap_infer import predict_scrap_map  # noqa: E402
+if not MODEL_PATH.exists():
+    print(f"❌ Model not found at {MODEL_PATH}")
+else:
+    print(f"✅ Model found → {MODEL_PATH}")
+
+from scrap_infer import predict_scrap_map
 
 app = FastAPI(title="Build Plate Survivor API")
 
 # --- CORS ---
-ALLOW_ORIGINS = os.getenv("ALLOW_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOW_ORIGINS,
+    allow_origins=["*"],      # TEMP open wide
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # --- Health ---
 @app.get("/health")
