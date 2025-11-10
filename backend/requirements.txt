@@ -3,3 +3,4 @@ uvicorn
 numpy==2.3.4
 scikit-learn==1.7.2
 joblib
+pandas
